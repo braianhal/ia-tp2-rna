@@ -4,6 +4,7 @@ import org.neuroph.core.data.DataSetRow;
 import org.neuroph.nnet.MultiLayerPerceptron;
 import org.neuroph.nnet.learning.MomentumBackpropagation;
 
+import java.io.File;
 import java.io.IOException;
 import java.rmi.ConnectIOException;
 import java.util.ArrayList;
@@ -55,9 +56,10 @@ public class NeuralNetworkProcessor {
 
         final int imageWidth = Configuration.widthPixels();
         final int imageHeight = Configuration.heightPixels();
-        for (String outputName : expectedOutputs) {
-            final double[] inputVector = ImageLoader.load(outputName, imageWidth, imageHeight);
-            final double[] outputVector = getExpectedOutputFor(outputName);
+
+        for (File trainingImage : ImageLoader.trainingImagesFor(expectedOutputs)){
+            final double[] inputVector = ImageLoader.load(trainingImage, imageWidth, imageHeight);
+            final double[] outputVector = getExpectedOutputFor(ImageLoader.baseImageName(trainingImage));
             trainingSet.addRow(new DataSetRow(inputVector, outputVector)); // Sets the input and output data of each pattern
         }
         return trainingSet;
