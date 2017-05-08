@@ -78,7 +78,7 @@ public class NeuralNetworkProcessor {
 
 
     public static void validateNetwork() throws IOException {
-
+        
     }
 
 }

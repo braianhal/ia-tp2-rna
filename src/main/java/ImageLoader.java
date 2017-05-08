@@ -15,7 +15,11 @@ public class ImageLoader {
         BufferedImage img = ImageIO.read(image);
         for(int i=0; i<width; i++){
             for(int j=0; j<height; j++){
-                int tone = img.getRGB(i,j) & 0xFF;
+                int color = img.getRGB(i,j);
+                int r = (color >> 16) & 0xFF;
+                int g = (color >> 8) & 0xFF;
+                int b = (color & 0xFF);
+                int tone = (r+g+b) / 3;
                 data[j*width+i] = tone / (double)255;
             }
         }
