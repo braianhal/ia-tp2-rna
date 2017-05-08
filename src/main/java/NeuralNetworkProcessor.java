@@ -2,49 +2,81 @@ import org.neuroph.core.NeuralNetwork;
 import org.neuroph.core.data.DataSet;
 import org.neuroph.core.data.DataSetRow;
 import org.neuroph.nnet.MultiLayerPerceptron;
+import org.neuroph.nnet.learning.MomentumBackpropagation;
 
 import java.io.IOException;
+import java.rmi.ConnectIOException;
+import java.util.ArrayList;
+import java.util.List;
 
 public class NeuralNetworkProcessor {
 
-    private static final int IMAGE_WIDTH = 100;
-    private static final int IMAGE_HEIGHT = 100;
-    private static final int HIDDEN_LAYER_NEURONS = 20;
-    private static final String[] LOGOS = { "facebook", "twitter", "google", "mercadolibre", "wikipedia", "instagram", "youtube"};
+    private static NeuralNetwork<org.neuroph.nnet.learning.BackPropagation> neuralNetwork;
 
-    private static NeuralNetwork neuralNetwork;
 
-    public static void trainNetwork() throws IOException {
-        System.out.println("Constructing network");
-        neuralNetwork = new MultiLayerPerceptron(IMAGE_WIDTH*IMAGE_HEIGHT,HIDDEN_LAYER_NEURONS,7);
-        System.out.println("Training network");
-        neuralNetwork.learn(getTrainingSet());
+
+
+    public static void constructNetwork(){
+        // Create multiperceptron network
+        neuralNetwork = new MultiLayerPerceptron(neuronsInLayers());
+
+        // Configure backpropagation method with error and learning parameters
+        MomentumBackpropagation learning = (MomentumBackpropagation) neuralNetwork.getLearningRule();
+        learning.setMaxError(Configuration.maxError());
+        learning.setLearningRate(Configuration.learningRate());
+
+        neuralNetwork.setLearningRule(learning);
     }
 
-    private static DataSet getTrainingSet() throws IOException {
-        DataSet trainingSet = new DataSet(IMAGE_WIDTH*IMAGE_HEIGHT,LOGOS.length);
-        for (String logo : LOGOS) {
-            trainingSet.addRow(new DataSetRow(ImageLoader.load(logo, IMAGE_WIDTH, IMAGE_HEIGHT), getExpectedOutputFor(logo)));
+    private static List<Integer> neuronsInLayers(){
+        final int inputNeurons = Configuration.imagePixels(); // input layer
+        final List<Integer> hiddenLayersNeurons = Configuration.neuronsHiddenLayers(); // n hidden layers
+        final int outputNeurons = Configuration.expectedOutputs().size(); // output layer
+        List<Integer> totalNeurons = new ArrayList<Integer>();
+        totalNeurons.add(inputNeurons);
+        totalNeurons.addAll(hiddenLayersNeurons);
+        totalNeurons.add(outputNeurons);
+        return totalNeurons;
+    }
+
+
+
+
+    public static void trainNetwork() throws IOException {
+        neuralNetwork.learn(trainingSet());
+    }
+
+    private static DataSet trainingSet() throws IOException {
+        final List<String> expectedOutputs = Configuration.expectedOutputs();
+        final int inputVectorSize = Configuration.imagePixels();
+        final int outputVectorSize = expectedOutputs.size();
+
+        DataSet trainingSet = new DataSet(inputVectorSize,outputVectorSize); // Sets the format of training patterns
+
+        final int imageWidth = Configuration.widthPixels();
+        final int imageHeight = Configuration.heightPixels();
+        for (String outputName : expectedOutputs) {
+            final double[] inputVector = ImageLoader.load(outputName, imageWidth, imageHeight);
+            final double[] outputVector = getExpectedOutputFor(outputName);
+            trainingSet.addRow(new DataSetRow(inputVector, outputVector)); // Sets the input and output data of each pattern
         }
         return trainingSet;
     }
 
     private static double[] getExpectedOutputFor(final String name){
-        double[] data = new double[LOGOS.length];
-        for(int i = 0;i <LOGOS.length; i++){
-            data[i] = (LOGOS[i].equals(name)) ? 1 : 0;
+        final List<String> expectedOutputs = Configuration.expectedOutputs();
+        double[] data = new double[expectedOutputs.size()];
+        for(int i = 0;i <expectedOutputs.size(); i++){
+            data[i] = (expectedOutputs.get(i).equals(name)) ? 1 : 0;
         }
         return data;
     }
 
+
+
+
     public static void validateNetwork() throws IOException {
-        System.out.println("Validating network");
-        neuralNetwork.setInput(ImageLoader.load("facebook_validation", IMAGE_WIDTH, IMAGE_HEIGHT));
-        neuralNetwork.calculate();
-        double[] outputData = neuralNetwork.getOutput();
-        for(int i = 0;i < outputData.length; i++){
-            System.out.println(LOGOS[i] + ": " + outputData[i]);
-        }
+
     }
 
 }
