@@ -4,16 +4,17 @@ import org.neuroph.core.data.DataSetRow;
 import org.neuroph.nnet.MultiLayerPerceptron;
 import org.neuroph.nnet.learning.MomentumBackpropagation;
 
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
 import java.rmi.ConnectIOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class NeuralNetworkProcessor {
 
     private static NeuralNetwork<org.neuroph.nnet.learning.BackPropagation> neuralNetwork;
 
+    private static EvaluationData evaluationData = new EvaluationData();
 
 
 
@@ -44,10 +45,20 @@ public class NeuralNetworkProcessor {
 
 
     public static void trainNetwork() throws IOException {
-        neuralNetwork.learn(trainingSet());
+        neuralNetwork.learn(getTrainingDataset());
+        evaluationData.setTotalTrainingError(neuralNetwork.getLearningRule().getTotalNetworkError());
     }
 
-    private static DataSet trainingSet() throws IOException {
+    private static DataSet getTrainingDataset() throws IOException {
+        return getDataSetFor(Configuration.trainingImagesDir());
+    }
+
+    private static DataSet getValidationDataset() throws IOException {
+        return getDataSetFor(Configuration.validationImagesDir());
+    }
+
+
+    private static DataSet getDataSetFor(final String imagesDirectory) throws IOException {
         final List<String> expectedOutputs = Configuration.expectedOutputs();
         final int inputVectorSize = Configuration.imagePixels();
         final int outputVectorSize = expectedOutputs.size();
@@ -57,10 +68,12 @@ public class NeuralNetworkProcessor {
         final int imageWidth = Configuration.widthPixels();
         final int imageHeight = Configuration.heightPixels();
 
-        for (File trainingImage : ImageLoader.trainingImagesFor(expectedOutputs)){
-            final double[] inputVector = ImageLoader.load(trainingImage, imageWidth, imageHeight);
-            final double[] outputVector = getExpectedOutputFor(ImageLoader.baseImageName(trainingImage));
-            trainingSet.addRow(new DataSetRow(inputVector, outputVector)); // Sets the input and output data of each pattern
+        for (File image : ImageLoader.getImagesFor(imagesDirectory, expectedOutputs)){
+            final double[] inputVector = ImageLoader.load(image, imageWidth, imageHeight);
+            final double[] outputVector = getExpectedOutputFor(ImageLoader.baseImageName(image));
+            DataSetRow pattern = new DataSetRow(inputVector, outputVector);
+            pattern.setLabel(image.getName());
+            trainingSet.addRow(pattern); // Sets the input and output data of each pattern
         }
         return trainingSet;
     }
@@ -78,7 +91,43 @@ public class NeuralNetworkProcessor {
 
 
     public static void validateNetwork() throws IOException {
-        
+        final DataSet validationSet = getValidationDataset();
+        for (DataSetRow validationPattern : validationSet.getRows()) {
+            neuralNetwork.setInput(validationPattern.getInput());
+            neuralNetwork.calculate();
+            evaluationData.addValidationOutputData(
+                    validationPattern.getLabel(), validationPattern.getDesiredOutput(),
+                    neuralNetwork.getOutput());
+        }
+    }
+
+
+
+
+    public static void generateOutputData() throws FileNotFoundException, UnsupportedEncodingException {
+        // Excel
+        PrintWriter writer = new PrintWriter(new File(new File("").getAbsolutePath() + Configuration.outputDir() + "validation.csv"));
+        writer.println("Imagen;Output generado;;Output esperado;;Error cuadrático,Válido");
+        for(ValidationOutput data : evaluationData.validationOutput) {
+            writer.println(
+                            data.imageName + ";" +
+                            data.getObtainedString() + ";" +
+                            data.obtainedName + ";" +
+                            data.getExpectedString() + ";" +
+                            data.expectedName + ";" +
+                            Double.toString(data.cuadraticError) + ";" +
+                            ((data.cuadraticError <= Configuration.maxErrorValidation()) ? "Sí" : "No"));
+        }
+        writer.flush();
+        writer.close();
+
+        // txt
+        writer = new PrintWriter(new File(new File("").getAbsolutePath() + Configuration.outputDir() + "data.txt"));
+        writer.println("Error total entrenamiento: " + Double.toString(evaluationData.totalTrainingError));
+        writer.println("Error cuadrático medio validación: " + Double.toString(evaluationData.meanCuadraticError()));
+        writer.println("Porcentaje de outputs válidos: " + Double.toString(evaluationData.porcentajeValidOutputs()));
+        writer.flush();
+        writer.close();
     }
 
 }

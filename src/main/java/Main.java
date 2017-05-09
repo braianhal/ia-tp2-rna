@@ -28,6 +28,9 @@ public class Main {
             NeuralNetworkProcessor.validateNetwork();
             endTime = System.currentTimeMillis();
             System.out.println("Network validated in " + (endTime - startTime)/1000 + " seconds");
+
+
+            NeuralNetworkProcessor.generateOutputData();
         } catch (IOException e) {
             System.out.println("Some images or config files couldn't be loaded");
             e.printStackTrace();

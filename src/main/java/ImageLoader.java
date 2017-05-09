@@ -26,8 +26,8 @@ public class ImageLoader {
         return data;
     }
 
-    public static List<File> trainingImagesFor(final List<String> expectedOutputs) {
-        File folder =  new File(BASE_PATH + Configuration.trainingImagesDir());
+    public static List<File> getImagesFor(final String directory, final List<String> expectedOutputs) {
+        File folder =  new File(BASE_PATH + directory);
         List<File> trainingImages = new ArrayList<File>();
         for (final File fileEntry : folder.listFiles()) {
             if(expectedOutputs.contains(baseImageName(fileEntry))){
