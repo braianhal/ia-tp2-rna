@@ -1,4 +1,5 @@
 import java.io.BufferedReader;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
 
@@ -37,10 +38,15 @@ public class Main {
 
     private static void train() throws IOException {
         long time = System.currentTimeMillis();
-        System.out.println("Entrenando red...");
+        System.out.println("Construyendo red...");
 
         NetworkTraining networkTraining = new NetworkTraining();
         networkTraining.build();
+
+        System.out.println("Red construida en " + ((System.currentTimeMillis()-time)/1000) +" segundos");
+        time = System.currentTimeMillis();
+        System.out.println("Entrenando red...");
+
         networkTraining.train();
         networkTraining.save();
 
@@ -48,12 +54,18 @@ public class Main {
     }
 
     private static void validate() throws Exception {
+        long time = System.currentTimeMillis();
+        System.out.println("Validando red...");
+
         NetworkValidation networkValidation = new NetworkValidation();
         networkValidation.load();
         networkValidation.validate();
+        networkValidation.generateOutput();
+
+        System.out.println("Red validada en " + ((System.currentTimeMillis()-time)/1000) +" segundos");
     }
 
-    private static void create(){
+    private static void create() throws FileNotFoundException {
         long time = System.currentTimeMillis();
         System.out.println("Creando red...");
 

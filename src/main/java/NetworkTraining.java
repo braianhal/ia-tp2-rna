@@ -8,13 +8,14 @@ import org.neuroph.nnet.learning.MomentumBackpropagation;
 import org.neuroph.util.TransferFunctionType;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
 public class NetworkTraining {
 
-    private NeuralNetwork network;
+    private NeuralNetwork<MomentumBackpropagation> network;
 
     public void build(){
         // Setea los nombres de los logos que se van a usar
@@ -35,6 +36,7 @@ public class NetworkTraining {
         mb.setLearningRate(Configuration.getLearningRate());
         mb.setMaxError(Configuration.getMaxError());
         mb.setMomentum(Configuration.getMomentum());
+        nn.setLearningRule(mb);
 
         network = nn;
     }
@@ -51,11 +53,13 @@ public class NetworkTraining {
         network.learn(dataSet);
     }
 
-    public void save() {
-        // Guarda la red en formato .nnet para
-        // abrirla con el software o ejecutar validaciones
+    public void save() throws FileNotFoundException {
+        // Guarda la red en formato .nnet
         final String outputName = Configuration.getOutputDir() + Configuration.getNetworkName() + ".nnet";
         network.save(outputName);
+
+        // Genera archivo de salida con datos del entrenamiento
+        DataOutput.outputTrainingData(network);
     }
 
 }
