@@ -1,40 +1,67 @@
-import org.neuroph.core.NeuralNetwork;
-
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 
 public class Main {
 
-    private static long startTime;
-    private static long endTime;
-
     public static void main(String [ ] args) {
         try {
+            // Carga el archivo de configuración
             Configuration.loadProperties();
 
-            System.out.println("Constructing network");
-            startTime = System.currentTimeMillis();
-            NeuralNetworkProcessor.constructNetwork();
-            endTime = System.currentTimeMillis();
-            System.out.println("Network constructed in " + (endTime - startTime)/1000 + " seconds");
-
-            System.out.println("Training network");
-            startTime = System.currentTimeMillis();
-            NeuralNetworkProcessor.trainNetwork();
-            endTime = System.currentTimeMillis();
-            System.out.println("Network trained in " + (endTime - startTime)/1000 + " seconds");
-
-            System.out.println("Validating network");
-            startTime = System.currentTimeMillis();
-            NeuralNetworkProcessor.validateNetwork();
-            endTime = System.currentTimeMillis();
-            System.out.println("Network validated in " + (endTime - startTime)/1000 + " seconds");
-
-
-            NeuralNetworkProcessor.generateOutputData();
+            // Realiza la tarea (entrenar o validar)
+            System.out.print("Tarea a realizar: ");
+            switch(new BufferedReader(new InputStreamReader(System.in)).readLine()){
+                case("entrenar"):
+                case("Entrenar"):
+                    train();
+                break;
+                case("validar"):
+                case("Validar"):
+                    validate();
+                break;
+                case("crear"):
+                case("Crear"):
+                    create();
+                    break;
+                default:
+                    throw new Exception("No se reconoce el comando ingresado");
+            }
         } catch (IOException e) {
-            System.out.println("Some images or config files couldn't be loaded");
+            System.out.println("Hubo un error cargando las propiedades, construyendo, entrenando o cargando la red");
+            e.printStackTrace();
+        } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    private static void train() throws IOException {
+        long time = System.currentTimeMillis();
+        System.out.println("Entrenando red...");
+
+        NetworkTraining networkTraining = new NetworkTraining();
+        networkTraining.build();
+        networkTraining.train();
+        networkTraining.save();
+
+        System.out.println("Red entrenada en " + ((System.currentTimeMillis()-time)/1000) +" segundos");
+    }
+
+    private static void validate() throws Exception {
+        NetworkValidation networkValidation = new NetworkValidation();
+        networkValidation.load();
+        networkValidation.validate();
+    }
+
+    private static void create(){
+        long time = System.currentTimeMillis();
+        System.out.println("Creando red...");
+
+        NetworkTraining networkTraining = new NetworkTraining();
+        networkTraining.build();
+        networkTraining.save();
+
+        System.out.println("Red creada en " + ((System.currentTimeMillis()-time)/1000) +" segundos");
     }
 
 }
